@@ -31,23 +31,23 @@ fn step(st: &mut State) {
 				Ok(_) => {},
 				Err(e) => fail!(e),
 			}
-		},
+		}
 		Read => {
 			match st.input.read_u8() {
 				Ok(b) => st.mem[st.p] = b,
 				Err(e) => fail!(e),
 			}
-		},
+		}
 		Loop(i) => {
 			if st.mem[st.p] == 0 {
 				st.i = i; // jump to end of loop
 			}
-		},
+		}
 		Back(i) => {
 			if st.mem[st.p] != 0 {
 				st.i = i; // jump back to loop start
 			}
-		},
+		}
 	}
 
 	// next op
@@ -92,12 +92,12 @@ fn parse(stream: &mut Reader) -> ~[Op] {
 			91 => {
 				loopStack.push(ops.len());
 				Loop(0)
-			},
+			}
 			93 => {
 				let j = loopStack.pop().expect("unmatched ]");
 				ops[j] = Loop(ops.len());
 				Back(j)
-			},
+			}
 			_  => continue
 		};
 		ops.push(op);
