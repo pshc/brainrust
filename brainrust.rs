@@ -11,12 +11,12 @@ enum Op {
 	Back(uint),
 }
 
-struct State {
+struct State<'a> {
 	i: uint,
 	p: uint,
-	input: ~Reader,
-	output: ~Writer,
-	prog: ~[Op],
+	input: &'a mut Reader,
+	output: &'a mut Writer,
+	prog: &'a [Op],
 	mem: [u8, ..30_000]
 }
 
@@ -48,13 +48,15 @@ fn step(st: &mut State) {
 	st.i += 1;
 }
 
-fn run(prog: ~[Op]) {
+fn run(prog: &[Op]) {
 	let n = prog.len();
+	let ref mut input = io::stdin();
+	let ref mut output = io::stdout();
 	let mut state = State {
 		i: 0,
 		p: 0,
-		input: ~io::stdin(),
-		output: ~io::stdout(),
+		input: input,
+		output: output,
 		prog: prog,
 		mem: [0u8, ..30_000]
 	};
