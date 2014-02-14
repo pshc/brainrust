@@ -92,7 +92,7 @@ fn run(prog: ~[Op]) {
 	}
 }
 
-fn tokenize(stream: &mut Reader) -> ~[Op] {
+fn parse(stream: &mut Reader) -> ~[Op] {
 	let mut ops: ~[Op] = ~[];
 	loop {
 		let b = match stream.read_byte() {
@@ -104,7 +104,7 @@ fn tokenize(stream: &mut Reader) -> ~[Op] {
 				}
 			}
 		};
-		ops.push(match b {
+		let op = match b {
 			62 => Next,
 			60 => Prev,
 			43 => Incr,
@@ -114,7 +114,8 @@ fn tokenize(stream: &mut Reader) -> ~[Op] {
 			91 => Jump,
 			93 => Land,
 			_  => continue
-		});
+		};
+		ops.push(op);
 	}
 	ops
 }
@@ -127,7 +128,7 @@ fn main() {
 	}
 	let prog = {
 		let file = io::File::open(&Path::new(args[1]));
-		tokenize(&mut io::BufferedReader::new(file))
+		parse(&mut io::BufferedReader::new(file))
 	};
 	run(prog);
 }
