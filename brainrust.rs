@@ -7,8 +7,8 @@ enum Op {
 	Decr,
 	Dump,
 	Read,
-	Jump,
-	Land,
+	Loop(uint),
+	Back(uint),
 }
 
 struct State {
@@ -38,39 +38,16 @@ fn step(st: &mut State) {
 				Err(e) => fail!(e),
 			}
 		},
-		Jump => {
+		Loop(i) => {
 			if st.mem[st.p] == 0 {
-				// advance past loop end (slowly)
-				st.i += 1;
-				let mut lev = 1;
-				while lev > 0 {
-					match st.prog[st.i] {
-						Jump => lev += 1,
-						Land => lev -= 1,
-						_    => {}
-					}
-					st.i += 1;
-				}
-				return;
+				st.i = i; // jump to end of loop
 			}
 		},
-		Land => {
+		Back(i) => {
 			if st.mem[st.p] != 0 {
-				// return to loop beginning (slowly)
-				st.i -= 1;
-				let mut lev = 1;
-				while lev > 0 {
-					match st.prog[st.i] {
-						Jump => lev -= 1,
-						Land => lev += 1,
-						_    => {}
-					}
-					st.i -= 1;
-				}
-				st.i += 2;
-				return;
+				st.i = i; // jump back to loop start
 			}
-		}
+		},
 	}
 
 	// next op
@@ -94,6 +71,7 @@ fn run(prog: ~[Op]) {
 
 fn parse(stream: &mut Reader) -> ~[Op] {
 	let mut ops: ~[Op] = ~[];
+	let mut loopStack: ~[uint] = ~[];
 	loop {
 		let b = match stream.read_byte() {
 			Ok(c) => c,
@@ -111,12 +89,20 @@ fn parse(stream: &mut Reader) -> ~[Op] {
 			45 => Decr,
 			46 => Dump,
 			44 => Read,
-			91 => Jump,
-			93 => Land,
+			91 => {
+				loopStack.push(ops.len());
+				Loop(0)
+			},
+			93 => {
+				let j = loopStack.pop().expect("unmatched ]");
+				ops[j] = Loop(ops.len());
+				Back(j)
+			},
 			_  => continue
 		};
 		ops.push(op);
 	}
+	assert!(loopStack.is_empty(), "unmatched [");
 	ops
 }
 
