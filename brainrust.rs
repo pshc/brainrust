@@ -50,13 +50,11 @@ fn step(st: &mut State) {
 
 fn run(prog: &[Op]) {
 	let n = prog.len();
-	let ref mut input = io::stdin();
-	let ref mut output = io::stdout();
 	let mut state = State {
 		i: 0,
 		p: 0,
-		input: input,
-		output: output,
+		input: &mut io::stdin(),
+		output: &mut io::stdout(),
 		prog: prog,
 		mem: [0u8, ..30_000]
 	};
