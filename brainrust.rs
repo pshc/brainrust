@@ -103,7 +103,8 @@ fn parse(stream: &mut Reader) -> ~[Op] {
 fn main() {
 	let args = std::os::args();
 	if args.len() != 2 {
-		println!("Usage: {} <script>", args[0]);
+		drop(writeln!(&mut io::stderr(), "Usage: {} <script>", args[0]));
+		std::os::set_exit_status(1);
 		return;
 	}
 	let prog = {
