@@ -63,15 +63,15 @@ fn run(prog: &[Op]) {
 	}
 }
 
-fn parse(stream: &mut Reader) -> ~[Op] {
-	let mut ops: ~[Op] = ~[];
-	let mut loopStack: ~[uint] = ~[];
+fn parse(stream: &mut Reader) -> Vec<Op> {
+	let mut ops: Vec<Op> = Vec::new();
+	let mut loopStack: Vec<uint> = Vec::new();
 	loop {
 		let b = match stream.read_byte() {
 			Ok(c) => c,
 			Err(e) => {
 				match e.kind {
-					io::EndOfFile() => break,
+					io::EndOfFile => break,
 					_ => fail!("{}", e)
 				}
 			}
@@ -89,7 +89,7 @@ fn parse(stream: &mut Reader) -> ~[Op] {
 			}
 			93 => {
 				let j = loopStack.pop().expect("unmatched ]");
-				ops[j] = Loop(ops.len());
+				*ops.get_mut(j) = Loop(ops.len());
 				Back(j)
 			}
 			_  => continue
@@ -111,5 +111,5 @@ fn main() {
 		let file = io::File::open(&Path::new(args[1]));
 		parse(&mut io::BufferedReader::new(file))
 	};
-	run(prog);
+	run(prog.as_slice());
 }
