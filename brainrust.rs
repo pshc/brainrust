@@ -14,8 +14,8 @@ enum Op {
 struct State<'a> {
 	i: uint,
 	p: uint,
-	input: &'a mut Reader,
-	output: &'a mut Writer,
+	input: &'a mut Reader + 'a,
+	output: &'a mut Writer + 'a,
 	prog: &'a [Op],
 	mem: [u8, ..30_000]
 }
@@ -65,7 +65,7 @@ fn run(prog: &[Op]) {
 
 fn parse(stream: &mut Reader) -> Vec<Op> {
 	let mut ops: Vec<Op> = Vec::new();
-	let mut loopStack: Vec<uint> = Vec::new();
+	let mut loop_stack: Vec<uint> = Vec::new();
 	loop {
 		let b = match stream.read_byte() {
 			Ok(c) => c,
@@ -84,11 +84,11 @@ fn parse(stream: &mut Reader) -> Vec<Op> {
 			46 => Dump,
 			44 => Read,
 			91 => {
-				loopStack.push(ops.len());
+				loop_stack.push(ops.len());
 				Loop(0)
 			}
 			93 => {
-				let j = loopStack.pop().expect("unmatched ]");
+				let j = loop_stack.pop().expect("unmatched ]");
 				*ops.get_mut(j) = Loop(ops.len());
 				Back(j)
 			}
@@ -96,7 +96,7 @@ fn parse(stream: &mut Reader) -> Vec<Op> {
 		};
 		ops.push(op);
 	}
-	assert!(loopStack.is_empty(), "unmatched [");
+	assert!(loop_stack.is_empty(), "unmatched [");
 	ops
 }
 
@@ -108,7 +108,8 @@ fn main() {
 		return;
 	}
 	let prog = {
-		let file = io::File::open(&Path::new(args[1]));
+		let path = Path::new(args[1].as_bytes());
+		let file = io::File::open(&path);
 		parse(&mut io::BufferedReader::new(file))
 	};
 	run(prog.as_slice());
