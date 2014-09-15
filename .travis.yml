@@ -5,4 +5,4 @@ install:
   - sudo apt-get install -qq rust-nightly
   - rustc --version
 script:
-  - make
+  - make test
