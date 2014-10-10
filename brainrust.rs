@@ -1,3 +1,5 @@
+#![feature(if_let, slicing_syntax)]
+
 use std::io;
 
 enum Op {
@@ -27,9 +29,8 @@ fn step(st: &mut State) {
         Incr => st.mem[st.p] += 1,
         Decr => st.mem[st.p] -= 1,
         Dump => {
-            match st.output.write_u8(st.mem[st.p]) {
-                Ok(_) => {},
-                Err(e) => fail!(e),
+            if let Err(e) = st.output.write_u8(st.mem[st.p]) {
+                fail!(e);
             }
         }
         Read => {
@@ -112,5 +113,5 @@ fn main() {
         let file = io::File::open(&path);
         parse(&mut io::BufferedReader::new(file))
     };
-    run(prog.as_slice());
+    run(prog[]);
 }
