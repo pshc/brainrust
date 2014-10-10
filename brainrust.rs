@@ -39,10 +39,16 @@ fn step(st: &mut State) {
                 Err(e) => fail!(e),
             }
         }
-        Loop(i) if st.mem[st.p] == 0 => st.i = i, // to end of loop
-        Loop(_) => {}
-        Back(i) if st.mem[st.p] != 0 => st.i = i, // back to loop start
-        Back(_) => {}
+        Loop(i) => {
+            if st.mem[st.p] == 0 {
+                st.i = i; // to end of loop
+            }
+        },
+        Back(i) => {
+            if st.mem[st.p] != 0 {
+                st.i = i; // back to loop start
+            }
+        }
     }
 
     // next op
