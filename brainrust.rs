@@ -30,13 +30,13 @@ fn step(st: &mut State) {
         Decr => st.mem[st.p] -= 1,
         Dump => {
             if let Err(e) = st.output.write_u8(st.mem[st.p]) {
-                fail!(e);
+                panic!(e);
             }
         }
         Read => {
             match st.input.read_u8() {
                 Ok(b) => st.mem[st.p] = b,
-                Err(e) => fail!(e),
+                Err(e) => panic!(e),
             }
         }
         Loop(i) => {
@@ -79,7 +79,7 @@ fn parse(stream: &mut Reader) -> Vec<Op> {
             Err(e) => {
                 match e.kind {
                     io::EndOfFile => break,
-                    _ => fail!("{}", e)
+                    _ => panic!("{}", e)
                 }
             }
         };
