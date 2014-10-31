@@ -96,7 +96,7 @@ fn parse(stream: &mut Reader) -> Vec<Op> {
             }
             93 => {
                 let j = loop_stack.pop().expect("unmatched ]");
-                *ops.get_mut(j) = Loop(ops.len());
+                ops[j] = Loop(ops.len());
                 Back(j)
             }
             _  => continue
