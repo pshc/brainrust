@@ -17,8 +17,8 @@ enum Op {
 struct State<'a> {
     i: uint,
     p: uint,
-    input: &'a mut Reader + 'a,
-    output: &'a mut Writer + 'a,
+    input: &'a mut (Reader + 'a),
+    output: &'a mut (Writer + 'a),
     prog: &'a [Op],
     mem: [u8, ..30_000]
 }
