@@ -1,4 +1,4 @@
-#![feature(if_let, slicing_syntax)]
+#![feature(slicing_syntax)]
 
 use std::io;
 use self::Op::{Next, Prev, Incr, Decr, Dump, Read, Loop, Back};
