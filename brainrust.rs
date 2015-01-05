@@ -20,7 +20,7 @@ struct State<'a> {
     input: &'a mut (Reader + 'a),
     output: &'a mut (Writer + 'a),
     prog: &'a [Op],
-    mem: [u8, ..30_000]
+    mem: [u8; 30_000],
 }
 
 fn step(st: &mut State) {
@@ -64,7 +64,7 @@ fn run(prog: &[Op]) {
         input: &mut io::stdin(),
         output: &mut io::stdout(),
         prog: prog,
-        mem: [0u8, ..30_000]
+        mem: [0u8; 30_000]
     };
     while state.i < n {
         step(&mut state);
