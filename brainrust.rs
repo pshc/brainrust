@@ -1,4 +1,5 @@
 #![feature(slicing_syntax)]
+#![allow(unstable)]
 
 use std::io;
 use self::Op::{Next, Prev, Incr, Decr, Dump, Read, Loop, Back};
@@ -10,13 +11,13 @@ enum Op {
     Decr,
     Dump,
     Read,
-    Loop(uint),
-    Back(uint),
+    Loop(usize),
+    Back(usize),
 }
 
 struct State<'a> {
-    i: uint,
-    p: uint,
+    i: usize,
+    p: usize,
     input: &'a mut (Reader + 'a),
     output: &'a mut (Writer + 'a),
     prog: &'a [Op],
@@ -73,7 +74,7 @@ fn run(prog: &[Op]) {
 
 fn parse(stream: &mut Reader) -> Vec<Op> {
     let mut ops: Vec<Op> = Vec::new();
-    let mut loop_stack: Vec<uint> = Vec::new();
+    let mut loop_stack: Vec<usize> = Vec::new();
     loop {
         let b = match stream.read_byte() {
             Ok(c) => c,
@@ -120,5 +121,5 @@ fn main() {
         let file = io::File::open(&path);
         parse(&mut io::BufferedReader::new(file))
     };
-    run(prog[]);
+    run(&prog[]);
 }
