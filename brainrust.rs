@@ -1,7 +1,6 @@
-#![feature(slicing_syntax)]
 #![allow(unstable)]
 
-use std::io;
+use std::old_io as io;
 use self::Op::{Next, Prev, Incr, Decr, Dump, Read, Loop, Back};
 
 enum Op {
