@@ -1,5 +1,6 @@
-#![allow(unstable)]
+#![feature(env, old_io, old_path)]
 
+use std::env;
 use std::old_io as io;
 use self::Op::{Next, Prev, Incr, Decr, Dump, Read, Loop, Back};
 
@@ -109,16 +110,18 @@ fn parse(stream: &mut Reader) -> Vec<Op> {
 }
 
 fn main() {
-    let args = std::os::args();
-    if args.len() != 2 {
-        drop(writeln!(&mut io::stderr(), "Usage: {} <script>", args[0]));
-        std::os::set_exit_status(1);
+    let mut args: Vec<String> = env::args().collect();
+    let prog_name = args.remove(0);
+    if args.len() != 1 {
+        drop(writeln!(&mut io::stderr(), "Usage: {} <script>", prog_name));
+        env::set_exit_status(1);
         return;
     }
+    let filename = args.remove(0);
     let prog = {
-        let path = Path::new(args[1].as_bytes());
+        let path = Path::new(&filename);
         let file = io::File::open(&path);
         parse(&mut io::BufferedReader::new(file))
     };
-    run(&prog[]);
+    run(&prog);
 }
