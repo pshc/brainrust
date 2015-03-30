@@ -1,8 +1,9 @@
-#![feature(env, old_io, old_path)]
+#![feature(exit_status)]
 
 use std::env;
-use std::old_io as io;
-use self::Op::{Next, Prev, Incr, Decr, Dump, Read, Loop, Back};
+use std::fs;
+use std::io::{self, Read, Write};
+use self::Op::{Next, Prev, Incr, Decr, Dump, Eat, Loop, Back};
 
 enum Op {
     Next,
@@ -10,33 +11,33 @@ enum Op {
     Incr,
     Decr,
     Dump,
-    Read,
+    Eat,
     Loop(usize),
     Back(usize),
 }
 
-struct State<'a> {
+struct State<'a, R: 'a + Read> {
     i: usize,
     p: usize,
-    input: &'a mut (Reader + 'a),
-    output: &'a mut (Writer + 'a),
+    input: &'a mut io::Bytes<R>,
+    output: &'a mut (Write + 'a),
     prog: &'a [Op],
     mem: [u8; 30_000],
 }
 
-fn step(st: &mut State) {
+fn step<R: Read>(st: &mut State<R>) {
     match st.prog[st.i] {
         Next => st.p += 1,
         Prev => st.p -= 1,
         Incr => st.mem[st.p] += 1,
         Decr => st.mem[st.p] -= 1,
         Dump => {
-            if let Err(e) = st.output.write_u8(st.mem[st.p]) {
+            if let Err(e) = st.output.write_all(&[st.mem[st.p]]) {
                 panic!(e);
             }
         }
-        Read => {
-            match st.input.read_u8() {
+        Eat => {
+            match st.input.next().expect("Unexpected EOF") {
                 Ok(b) => st.mem[st.p] = b,
                 Err(e) => panic!(e),
             }
@@ -62,7 +63,7 @@ fn run(prog: &[Op]) {
     let mut state = State {
         i: 0,
         p: 0,
-        input: &mut io::stdin(),
+        input: &mut io::stdin().bytes(),
         output: &mut io::stdout(),
         prog: prog,
         mem: [0u8; 30_000]
@@ -72,18 +73,14 @@ fn run(prog: &[Op]) {
     }
 }
 
-fn parse(stream: &mut Reader) -> Vec<Op> {
+fn parse<R: Read>(stream: &mut io::Bytes<R>) -> Vec<Op> {
     let mut ops: Vec<Op> = Vec::new();
     let mut loop_stack: Vec<usize> = Vec::new();
     loop {
-        let b = match stream.read_byte() {
-            Ok(c) => c,
-            Err(e) => {
-                match e.kind {
-                    io::EndOfFile => break,
-                    _ => panic!("{}", e)
-                }
-            }
+        let b = match stream.next() {
+            None => break,
+            Some(Ok(c)) => c,
+            Some(Err(e)) => panic!("{}", e)
         };
         let op = match b {
             62 => Next,
@@ -91,7 +88,7 @@ fn parse(stream: &mut Reader) -> Vec<Op> {
             43 => Incr,
             45 => Decr,
             46 => Dump,
-            44 => Read,
+            44 => Eat,
             91 => {
                 loop_stack.push(ops.len());
                 Loop(0)
@@ -119,9 +116,8 @@ fn main() {
     }
     let filename = args.remove(0);
     let prog = {
-        let path = Path::new(&filename);
-        let file = io::File::open(&path);
-        parse(&mut io::BufferedReader::new(file))
+        let file = fs::File::open(&filename).unwrap();
+        parse(&mut io::BufReader::new(file).bytes())
     };
     run(&prog);
 }
