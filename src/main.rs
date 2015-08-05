@@ -1,5 +1,3 @@
-#![feature(exit_status)]
-
 use std::env;
 use std::fs;
 use std::io::{self, Read, Write};
@@ -111,8 +109,7 @@ fn main() {
     let prog_name = args.remove(0);
     if args.len() != 1 {
         drop(writeln!(&mut io::stderr(), "Usage: {} <script>", prog_name));
-        env::set_exit_status(1);
-        return;
+        panic!("only one argument please");
     }
     let filename = args.remove(0);
     let prog = {
