@@ -1,7 +1,7 @@
 use std::env;
 use std::fs;
 use std::io::{self, Read, Write};
-use self::Op::{Next, Prev, Incr, Decr, Dump, Eat, Loop, Back};
+use self::Op::*;
 
 enum Op {
     Next,
@@ -23,22 +23,18 @@ struct State<'a, R: 'a + Read> {
     mem: [u8; 30_000],
 }
 
-fn step<R: Read>(st: &mut State<R>) {
+fn step<R: Read>(st: &mut State<R>) -> io::Result<()> {
     match st.prog[st.i] {
         Next => st.p += 1,
         Prev => st.p -= 1,
         Incr => st.mem[st.p] += 1,
         Decr => st.mem[st.p] -= 1,
         Dump => {
-            if let Err(e) = st.output.write_all(&[st.mem[st.p]]) {
-                panic!(e);
-            }
+            try!(st.output.write_all(&[st.mem[st.p]]))
         }
         Eat => {
-            match st.input.next().expect("Unexpected EOF") {
-                Ok(b) => st.mem[st.p] = b,
-                Err(e) => panic!(e),
-            }
+            let b = try!(st.input.next().expect("Unexpected EOF"));
+            st.mem[st.p] = b;
         }
         Loop(i) => {
             if st.mem[st.p] == 0 {
@@ -54,9 +50,11 @@ fn step<R: Read>(st: &mut State<R>) {
 
     // next op
     st.i += 1;
+
+    Ok(())
 }
 
-fn run(prog: &[Op]) {
+fn run(prog: &[Op]) -> io::Result<()> {
     let n = prog.len();
     let mut state = State {
         i: 0,
@@ -67,18 +65,18 @@ fn run(prog: &[Op]) {
         mem: [0u8; 30_000]
     };
     while state.i < n {
-        step(&mut state);
+        try!(step(&mut state));
     }
+    Ok(())
 }
 
-fn parse<R: Read>(stream: &mut io::Bytes<R>) -> Vec<Op> {
-    let mut ops: Vec<Op> = Vec::new();
-    let mut loop_stack: Vec<usize> = Vec::new();
+fn parse<R: Read>(stream: &mut io::Bytes<R>) -> io::Result<Vec<Op>> {
+    let mut ops = vec![];
+    let mut loop_stack = vec![];
     loop {
         let b = match stream.next() {
             None => break,
-            Some(Ok(c)) => c,
-            Some(Err(e)) => panic!("{}", e)
+            Some(r) => try!(r),
         };
         let op = match b {
             62 => Next,
@@ -101,20 +99,20 @@ fn parse<R: Read>(stream: &mut io::Bytes<R>) -> Vec<Op> {
         ops.push(op);
     }
     assert!(loop_stack.is_empty(), "unmatched [");
-    ops
+    Ok(ops)
 }
 
 fn main() {
     let mut args: Vec<String> = env::args().collect();
     let prog_name = args.remove(0);
     if args.len() != 1 {
-        drop(writeln!(&mut io::stderr(), "Usage: {} <script>", prog_name));
+        writeln!(&mut io::stderr(), "Usage: {} <script>", prog_name).unwrap();
         panic!("only one argument please");
     }
     let filename = args.remove(0);
     let prog = {
         let file = fs::File::open(&filename).unwrap();
-        parse(&mut io::BufReader::new(file).bytes())
+        parse(&mut io::BufReader::new(file).bytes()).unwrap()
     };
-    run(&prog);
+    run(&prog).unwrap()
 }
