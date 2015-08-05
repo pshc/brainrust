@@ -1,8 +1,9 @@
-before_install:
-  - sudo add-apt-repository --yes ppa:hansjorg/rust
-  - sudo apt-get update -qq
-install:
-  - sudo apt-get install -qq rust-nightly
-  - rustc --version
-script:
-  - make test
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+matrix:
+  allow_failure:
+    - rust: nightly
+sudo: false
